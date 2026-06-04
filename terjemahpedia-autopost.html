@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TerjemahPedia — Auto Post</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c1:#6c2bd9;--c1l:#ede8fc;--c1d:#4a1b9a;
+  --c2:#e8480a;--c2l:#fde8df;
+  --c3:#0a8a5c;--c3l:#d4f5e8;
+  --c4:#d4800a;--c4l:#fdf0d4;
+  --c5:#0a6aad;--c5l:#d4eaf8;
+  --ink:#0f0a1e;--ink2:#3d3558;--ink3:#8880a0;
+  --bg:#f5f0ff;--white:#fff;--border:#d8ceee;
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+header{display:none}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;color:#fff;display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.header-badge{background:rgba(255,255,255,.2);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px}
+.wp-pill{display:none;align-items:center;gap:6px;background:#22c55e;color:#fff;font-size:11px;padding:5px 12px;border-radius:20px;font-weight:700}
+.wp-pill.show{display:flex}
+.hero{background:linear-gradient(135deg,var(--c1) 0%,#9333ea 55%,var(--c2) 100%);padding:22px 28px 18px;color:#fff;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E")}
+.hero h1{font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;margin-bottom:4px;position:relative}
+.hero p{font-size:13px;opacity:.85;position:relative}
+.wrap{max-width:1000px;margin:0 auto;padding:22px 20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+.card{background:var(--white);border:1.5px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:18px;box-shadow:0 2px 14px rgba(108,43,217,.07)}
+.card-head{padding:13px 20px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.ch-purple{background:var(--c1l);color:var(--c1d)}
+.ch-orange{background:var(--c2l);color:#b83a06}
+.ch-green{background:var(--c3l);color:#065f40}
+.ch-blue{background:var(--c5l);color:#1e3a5f}
+.tabs{display:flex;background:#f8f5ff;border-bottom:1.5px solid var(--border);flex-wrap:wrap}
+.tab{padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;color:var(--ink3);font-family:'Syne',sans-serif;display:flex;align-items:center;gap:6px;transition:all .2s}
+.tab:hover{color:var(--ink2)}
+.tab.active{color:var(--c1);border-bottom-color:var(--c1);background:rgba(108,43,217,.04)}
+.tab-pane{display:none;padding:20px}
+.tab-pane.active{display:block}
+label{font-size:11px;font-weight:700;color:var(--ink3);display:block;margin-bottom:5px;margin-top:16px;text-transform:uppercase;letter-spacing:.6px}
+label:first-child{margin-top:0}
+input,select,textarea{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;color:var(--ink);background:var(--white);outline:none;transition:border .15s,box-shadow .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--c1);box-shadow:0 0 0 3px rgba(108,43,217,.1)}
+textarea{resize:vertical;line-height:1.7}
+.btn{border:1.5px solid var(--border);border-radius:10px;padding:10px 20px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;cursor:pointer;background:var(--white);color:var(--ink);display:inline-flex;align-items:center;gap:7px;transition:all .18s}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-purple{background:var(--c1);color:#fff;border-color:var(--c1);box-shadow:0 4px 14px rgba(108,43,217,.35)}
+.btn-purple:hover{background:var(--c1d)}
+.btn-orange{background:var(--c2);color:#fff;border-color:var(--c2);box-shadow:0 4px 14px rgba(232,72,10,.3)}
+.btn-orange:hover{background:#c93d07}
+.btn-green{background:var(--c3);color:#fff;border-color:var(--c3)}
+.btn-green:hover{background:#076e49}
+.btn-blue{background:var(--c5);color:#fff;border-color:var(--c5)}
+.btn-blue:hover{background:#084d80}
+.btn-red{background:#dc2626;color:#fff;border-color:#dc2626}
+.btn-red:hover{background:#b91c1c}
+.btn-sm{padding:7px 14px;font-size:12px}
+.btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.alert{font-size:13px;padding:11px 16px;border-radius:10px;margin-top:12px;display:none;line-height:1.6;font-weight:500;border-left:4px solid transparent}
+.alert.ok{background:var(--c3l);color:#065f40;border-color:var(--c3);display:block}
+.alert.err{background:#fde8e8;color:#9b1c1c;border-color:#ef4444;display:block}
+.alert.info{background:var(--c5l);color:#1e3a5f;border-color:var(--c5);display:block}
+.info-box{background:linear-gradient(135deg,var(--c5l),#e8e0fc);border:1.5px solid #b4c8e8;border-radius:12px;padding:14px 16px;font-size:12.5px;color:var(--ink2);line-height:1.7;margin-bottom:18px}
+.info-box strong{color:var(--c1)}
+.info-box a{color:var(--c5)}
+.kw-wrap{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.kw{background:var(--c1l);border:1.5px solid #c4b4f0;border-radius:20px;padding:5px 13px;font-size:12px;cursor:pointer;color:var(--c1d);font-weight:700;transition:all .15s}
+.kw:hover{background:var(--c1);color:#fff;border-color:var(--c1)}
+.prog{height:6px;background:#ede8fc;border-radius:10px;overflow:hidden;margin-top:12px;display:none}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--c1),var(--c2));width:0;transition:width .35s;border-radius:10px}
+.preview{background:linear-gradient(135deg,#faf8ff,#fff8f5);border:1.5px solid var(--border);border-radius:12px;padding:20px;font-size:13.5px;line-height:1.9;display:none;margin-top:16px;max-height:380px;overflow-y:auto}
+.preview h1{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:14px;color:var(--c1d);border-bottom:2px solid var(--c1l);padding-bottom:10px}
+.preview h2{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin:18px 0 7px;color:var(--c2)}
+.preview p{margin-bottom:10px;color:var(--ink2)}
+.preview ul{padding-left:1.3rem;margin:6px 0}
+.preview li{margin-bottom:5px;color:var(--ink2)}
+.preview strong{color:var(--ink)}
+.preview a{color:var(--c5)}
+.status-strip{background:var(--c1l);border:1.5px solid #c4b4f0;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--c1d);font-weight:600;display:none;margin-top:12px}
+.status-strip.show{display:block}
+
+/* IMAGE PREVIEW */
+.img-preview-box{display:none;margin-top:14px;border-radius:12px;overflow:hidden;border:1.5px solid var(--border);position:relative}
+.img-preview-box img{width:100%;height:200px;object-fit:cover;display:block}
+.img-preview-box .img-label{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
+.img-loading{height:200px;display:flex;align-items:center;justify-content:center;background:var(--c1l);color:var(--c1d);font-size:13px;font-weight:600;gap:8px}
+
+/* SCHEDULE */
+.schedule-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.schedule-table th{background:var(--c1l);color:var(--c1d);padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.schedule-table th:first-child{border-radius:8px 0 0 0}
+.schedule-table th:last-child{border-radius:0 8px 0 0}
+.schedule-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.schedule-table tr:last-child td{border:none}
+.schedule-table tr:hover td{background:#faf8ff}
+.sched-status{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
+.sched-waiting{background:#fff8e1;color:#b45309}
+.sched-done{background:var(--c3l);color:#065f40}
+.sched-failed{background:#fde8e8;color:#9b1c1c}
+.sched-running{background:var(--c5l);color:#1e3a5f}
+.countdown{font-size:12px;color:var(--ink3);font-weight:600}
+.queue-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat-box{background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.stat-box .num{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800}
+.stat-box .lbl{font-size:11px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.num-purple{color:var(--c1)}
+.num-orange{color:var(--c2)}
+.num-green{color:var(--c3)}
+.num-blue{color:var(--c5)}
+
+/* LOG */
+.log-list{max-height:240px;overflow-y:auto}
+.log-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #ede8fc}
+.log-item:last-child{border:none}
+.log-dot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.dot-g{background:var(--c3)}.dot-y{background:var(--c4)}.dot-r{background:var(--c2)}.dot-b{background:var(--c5)}
+.badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700}
+.badge-g{background:var(--c3l);color:#065f40}
+.badge-b{background:var(--c5l);color:#1e3a5f}
+.badge-r{background:var(--c2l);color:#b83a06}
+.empty{text-align:center;padding:2.5rem;font-size:13px;color:var(--ink3)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@media(max-width:640px){.grid2,.grid3,.grid4,.queue-stats{grid-template-columns:1fr 1fr}.wrap{padding:14px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🌐</div>
+    TerjemahPedia
+    <span class="header-badge">AUTO POST</span>
+  </div>
+  <div class="wp-pill" id="wpPill">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px"><polyline points="20 6 9 17 4 12"/></svg>
+    WordPress Terhubung
+  </div>
+</header>
+
+<div class="hero">
+  <h1>🚀 Generator Artikel & Auto Post + Jadwal</h1>
+  <p>Generate artikel SEO + gambar otomatis → jadwalkan posting random ke WordPress TerjemahPedia</p>
+</div>
+
+<div class="wrap">
+
+  <!-- CONFIG -->
+  <div class="card">
+    <div class="card-head ch-purple">🔧 Konfigurasi API & WordPress</div>
+    <div style="padding:20px">
+
+      <label>🤖 Claude API Key</label>
+      <input type="password" id="claudeKey" placeholder="sk-ant-api03-..." oninput="saveConfig()">
+      <div class="grid2" style="margin-top:0">
+        <div>
+          <label>🔗 URL WordPress</label>
+          <input type="text" id="wpUrl" placeholder="https://terjemahpedia.com" oninput="saveConfig()">
+        </div>
+        <div>
+          <label>👤 Username WordPress</label>
+          <input type="text" id="wpUser" placeholder="AdminTerjemahpedia" oninput="saveConfig()">
+        </div>
+      </div>
+      <div class="grid2">
+        <div>
+          <label>🔑 Application Password</label>
+          <input type="password" id="wpPass" placeholder="password login WordPress" oninput="saveConfig()">
+        </div>
+        <div>
+          <label>🏷️ ID Kategori "penerjemah"</label>
+          <input type="text" id="wpCat" placeholder="1" oninput="saveConfig()">
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:16px;padding:12px 14px;background:var(--c1l);border-radius:10px;border:1.5px solid #c4b4f0">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--c1d);font-weight:600">
+          <input type="checkbox" id="rememberToggle" onchange="saveConfig()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--c1)">
+          💾 Simpan password & konfigurasi di browser ini
+        </label>
+        <span style="font-size:11px;color:var(--ink3);margin-left:auto">Jangan aktifkan di komputer umum</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="testWP()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Test Koneksi WP
+        </button>
+      </div>
+      <div class="alert" id="wpStatus"></div>
+    </div>
+  </div>
+
+  <!-- MAIN CARD -->
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('generate',this)">✏️ Generate & Post</div>
+      <div class="tab" onclick="switchTab('schedule',this)">🗓️ Jadwal Posting</div>
+      <div class="tab" onclick="switchTab('log',this)">📋 Riwayat</div>
+    </div>
+
+    <!-- TAB GENERATE -->
+    <div id="tab-generate" class="tab-pane active">
+      <div class="grid2">
+        <div>
+          <label>🔍 Keyword / Topik Utama</label>
+          <input type="text" id="keyword" placeholder="contoh: jasa penerjemah tersumpah Bandung 2025">
+        </div>
+        <div>
+          <label>📍 Kota Target (SEO Lokal)</label>
+          <input type="text" id="kota" placeholder="contoh: Bandung, Surabaya, Medan">
+        </div>
+      </div>
+      <label>⚡ Keyword Cepat</label>
+      <div class="kw-wrap">
+        <span class="kw" onclick="setKw('jasa penerjemah tersumpah 2025')">penerjemah tersumpah</span>
+        <span class="kw" onclick="setKw('penerjemah dokumen resmi')">dokumen resmi</span>
+        <span class="kw" onclick="setKw('terjemahan ijazah bahasa inggris')">terjemah ijazah</span>
+        <span class="kw" onclick="setKw('jasa terjemah arab indonesia')">terjemah arab</span>
+        <span class="kw" onclick="setKw('penerjemah jepang indonesia')">terjemah jepang</span>
+        <span class="kw" onclick="setKw('jasa subtitle video profesional')">subtitle video</span>
+        <span class="kw" onclick="setKw('terjemah akta kelahiran resmi')">akta kelahiran</span>
+        <span class="kw" onclick="setKw('jasa terjemah korea indonesia')">terjemah korea</span>
+        <span class="kw" onclick="setKw('penerjemah kontrak bisnis')">kontrak bisnis</span>
+        <span class="kw" onclick="setKw('jasa terjemah mandarin indonesia')">terjemah mandarin</span>
+        <span class="kw" onclick="setKw('penerjemah belanda indonesia')">terjemah belanda</span>
+        <span class="kw" onclick="setKw('jasa terjemah prancis indonesia')">terjemah prancis</span>
+      </div>
+      <div class="grid3" style="margin-top:4px">
+        <div>
+          <label>🌐 Bahasa Pasang</label>
+          <select id="langPair">
+            <option>Indonesia – Inggris</option>
+            <option>Indonesia – Arab</option>
+            <option>Indonesia – Jepang</option>
+            <option>Indonesia – Korea</option>
+            <option>Indonesia – Mandarin</option>
+            <option>Indonesia – Belanda</option>
+            <option>Indonesia – Jerman</option>
+            <option>Indonesia – Prancis</option>
+            <option>Indonesia – Spanyol</option>
+          </select>
+        </div>
+        <div>
+          <label>📂 Jenis Layanan</label>
+          <select id="jenisLayanan">
+            <option>Dokumen Resmi / Tersumpah</option>
+            <option>Artikel &amp; Konten</option>
+            <option>Subtitle &amp; Video</option>
+            <option>Bisnis &amp; Teknis</option>
+            <option>Akademis &amp; Riset</option>
+            <option>Lokalisasi Website</option>
+          </select>
+        </div>
+        <div>
+          <label>📤 Status Post</label>
+          <select id="postStatus">
+            <option value="publish">Publish Langsung</option>
+            <option value="draft">Draft (review dulu)</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-purple" id="btnGen" onclick="generateArtikel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px"><path d="M12 3l1.912 5.813a2 2 0 001.272 1.272L21 12l-5.816 1.916a2 2 0 00-1.272 1.272L12 21l-1.912-5.812a2 2 0 00-1.272-1.272L3 12l5.816-1.915a2 2 0 001.272-1.272L12 3z"/></svg>
+          Generate Artikel + Gambar
+        </button>
+        <button class="btn btn-orange" id="btnPost" onclick="postToWP()" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          Post ke WordPress
+        </button>
+        <button class="btn btn-blue" id="btnAddQueue" onclick="addToQueue()" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px"><path d="M12 5v14M5 12h14"/></svg>
+          Tambah ke Jadwal
+        </button>
+        <button class="btn btn-sm" id="btnCopy" onclick="copyHTML()" style="display:none">📋 Salin HTML</button>
+      </div>
+      <div class="prog" id="progBar"><div class="prog-fill" id="progFill"></div></div>
+      <div class="status-strip" id="genStatusBox"></div>
+      <div class="img-preview-box" id="imgPreviewBox">
+        <div class="img-loading" id="imgLoading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+          Generating gambar...
+        </div>
+        <img id="imgPreview" src="" alt="" style="display:none">
+        <div class="img-label">🎨 Pollinations AI</div>
+      </div>
+      <div class="preview" id="previewBox"></div>
+      <textarea id="rawHTML" style="display:none"></textarea>
+      <input type="hidden" id="currentImgUrl" value="">
+    </div>
+
+    <!-- TAB SCHEDULE -->
+    <div id="tab-schedule" class="tab-pane">
+      <div class="queue-stats">
+        <div class="stat-box"><div class="num num-purple" id="statTotal">0</div><div class="lbl">Total</div></div>
+        <div class="stat-box"><div class="num num-blue" id="statWaiting">0</div><div class="lbl">Menunggu</div></div>
+        <div class="stat-box"><div class="num num-green" id="statDone">0</div><div class="lbl">Selesai</div></div>
+        <div class="stat-box"><div class="num num-orange" id="statFailed">0</div><div class="lbl">Gagal</div></div>
+      </div>
+
+      <!-- BULK SCHEDULE -->
+      <div class="card" style="margin-bottom:14px;box-shadow:none;border-color:var(--c1l)">
+        <div class="card-head ch-blue" style="font-size:13px">📦 Buat Jadwal Massal (Bulk)</div>
+        <div style="padding:16px">
+          <div class="grid2">
+            <div>
+              <label>📝 Daftar Keyword (1 per baris)</label>
+              <textarea id="bulkKeywords" rows="5" placeholder="jasa penerjemah tersumpah Jakarta&#10;terjemah ijazah bahasa inggris&#10;penerjemah dokumen resmi Surabaya&#10;jasa terjemah arab indonesia&#10;penerjemah jepang indonesia"></textarea>
+            </div>
+            <div>
+              <label>⏰ Rentang Jam Posting Random</label>
+              <div class="grid2" style="gap:8px;margin-top:0">
+                <div>
+                  <label style="margin-top:0">Jam Mulai</label>
+                  <input type="number" id="schedStart" value="8" min="0" max="23" placeholder="8">
+                </div>
+                <div>
+                  <label style="margin-top:0">Jam Selesai</label>
+                  <input type="number" id="schedEnd" value="20" min="0" max="23" placeholder="20">
+                </div>
+              </div>
+              <label>📅 Mulai Dari Tanggal</label>
+              <input type="date" id="schedDate">
+              <label>📊 Artikel per Hari (Max)</label>
+              <input type="number" id="schedPerDay" value="3" min="1" max="10">
+              <label>🌐 Bahasa Default</label>
+              <select id="schedLang">
+                <option>Indonesia – Inggris</option>
+                <option>Indonesia – Arab</option>
+                <option>Indonesia – Jepang</option>
+                <option>Indonesia – Korea</option>
+                <option>Indonesia – Mandarin</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-purple" onclick="bulkSchedule()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+              Buat Jadwal Otomatis
+            </button>
+            <button class="btn btn-red btn-sm" onclick="clearQueue()">🗑 Hapus Semua Jadwal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUEUE TABLE -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">Antrian Jadwal</span>
+        <button class="btn btn-green btn-sm" id="btnRunQueue" onclick="runQueue()">
+          ▶ Jalankan Sekarang
+        </button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="schedule-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Keyword</th>
+              <th>Jadwal</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="queueBody">
+            <tr><td colspan="5" class="empty">Belum ada jadwal. Tambah dari tab Generate atau buat massal.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB LOG -->
+    <div id="tab-log" class="tab-pane">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">Riwayat Posting</span>
+        <button class="btn btn-sm" onclick="clearLog()">🗑 Hapus</button>
+      </div>
+      <div class="log-list" id="postLog"><div class="empty">📭 Belum ada riwayat posting</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let generatedHTML='', logItems=[], queue=[], queueTimer=null, isRunning=false;
+
+// ── CONFIG ──
+function loadConfig(){
+  const rememberEnabled = localStorage.getItem('tp_remember')==='true';
+  document.getElementById('rememberToggle').checked = rememberEnabled;
+  if(rememberEnabled){
+    ['wpUrl','wpUser','wpPass','wpCat'].forEach(k=>{
+      const el=document.getElementById(k);
+      const val=localStorage.getItem('tp_'+k)||'';
+      if(el&&val) el.value=val;
+    });
+  }
+  const saved=localStorage.getItem('tp_queue');
+  if(saved) queue=JSON.parse(saved);
+  const savedLog=localStorage.getItem('tp_log');
+  if(savedLog) logItems=JSON.parse(savedLog);
+  // set default date to today
+  document.getElementById('schedDate').value=new Date().toISOString().split('T')[0];
+  // Restore toggle state
+  const savedToggle=localStorage.getItem('tp_savePass');
+  const toggle=document.getElementById('savePassToggle');
+  if(toggle) toggle.checked = savedToggle==='1';
+  renderQueue(); renderLog(); updateStats();
+}
+function saveConfig(){
+  const remember = document.getElementById('rememberToggle').checked;
+  localStorage.setItem('tp_remember', remember);
+  if(remember){
+    ['wpUrl','wpUser','wpPass','wpCat'].forEach(k=>{
+      const el=document.getElementById(k);
+      if(el) localStorage.setItem('tp_'+k,el.value);
+    });
+  } else {
+    ['wpUrl','wpUser','wpPass','wpCat','claudeKey'].forEach(k=>localStorage.removeItem('tp_'+k));
+  }
+}
+function saveQueue(){localStorage.setItem('tp_queue',JSON.stringify(queue));}
+function saveLog(){localStorage.setItem('tp_log',JSON.stringify(logItems.slice(0,50)));}
+loadConfig();
+
+// ── TABS ──
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='schedule') renderQueue();
+}
+
+function setKw(kw){document.getElementById('keyword').value=kw}
+
+function setAlert(id,msg,type){
+  const el=document.getElementById(id);
+  el.className='alert '+type; el.innerHTML=msg; el.style.display='block';
+}
+function setGenStatus(msg,show){
+  const el=document.getElementById('genStatusBox');
+  el.textContent=msg; el.className=show?'status-strip show':'status-strip';
+}
+function setProgress(pct){
+  const bar=document.getElementById('progBar'),fill=document.getElementById('progFill');
+  if(pct<=0){bar.style.display='none';fill.style.width='0';return;}
+  bar.style.display='block'; fill.style.width=pct+'%';
+}
+
+// ── WP TEST ──
+let jwtToken='';
+
+async function getJWT(){
+  const url=document.getElementById('wpUrl').value.trim().replace(/\/$/,'');
+  const user=document.getElementById('wpUser').value.trim();
+  const pass=document.getElementById('wpPass').value.trim();
+  const body=JSON.stringify({username:user,password:pass});
+  const headers={'Content-Type':'application/json'};
+  
+  // Coba semua kemungkinan endpoint
+  const endpoints=[
+    url+'/?rest_route=/jwt-auth/v1/token',
+    url+'/wp-json/jwt-auth/v1/token',
+    url+'/index.php?rest_route=/jwt-auth/v1/token'
+  ];
+  
+  for(const endpoint of endpoints){
+    try{
+      const res=await fetch(endpoint,{method:'POST',headers,body});
+      if(res.ok){
+        const data=await res.json();
+        if(data.token){
+          jwtToken=data.token;
+          return data.token;
+        }
+      }
+    }catch(e){continue;}
+  }
+  throw new Error('Tidak bisa login ke WordPress. Pastikan plugin JWT Authentication aktif.');
+}
+
+async function testWP(){
+  const url=document.getElementById('wpUrl').value.trim().replace(/\/$/,'');
+  const user=document.getElementById('wpUser').value.trim();
+  const pass=document.getElementById('wpPass').value.trim();
+  if(!url||!user||!pass){setAlert('wpStatus','Isi URL, username, dan password terlebih dahulu.','err');return;}
+  setAlert('wpStatus','🔄 Menghubungkan dengan JWT...','info');
+  try{
+    const token=await getJWT();
+    // Coba kedua format endpoint
+    let res=await fetch(url+'/?rest_route=/wp/v2/users/me',{headers:{'Authorization':'Bearer '+token}});
+    if(!res.ok) res=await fetch(url+'/wp-json/wp/v2/users/me',{headers:{'Authorization':'Bearer '+token}});
+    if(res.ok){
+      const d=await res.json();
+      setAlert('wpStatus','✅ Terhubung sebagai: <strong>'+d.name+'</strong>','ok');
+      document.getElementById('wpPill').classList.add('show');
+    }else{
+      const e=await res.json().catch(()=>({}));
+      setAlert('wpStatus','❌ Gagal: '+(e.message||res.status),'err');
+      document.getElementById('wpPill').classList.remove('show');
+    }
+  }catch(e){
+    setAlert('wpStatus','❌ Error: '+e.message,'err');
+  }
+}
+
+// ── GENERATE IMAGE (Pollinations AI) ──
+function generateImage(keyword){
+  const prompt=encodeURIComponent('professional translation service office document '+keyword+' clean modern Indonesia');
+  const seed=Math.floor(Math.random()*99999);
+  return `https://image.pollinations.ai/prompt/${prompt}?width=1200&height=630&seed=${seed}&nologo=true&enhance=true`;
+}
+
+function previewImage(url){
+  const box=document.getElementById('imgPreviewBox');
+  const img=document.getElementById('imgPreview');
+  const loading=document.getElementById('imgLoading');
+  box.style.display='block';
+  loading.style.display='flex';
+  img.style.display='none';
+  img.src=url;
+  img.onload=()=>{loading.style.display='none';img.style.display='block';}
+  img.onerror=()=>{loading.innerHTML='⚠️ Gambar gagal dimuat';};
+  document.getElementById('currentImgUrl').value=url;
+}
+
+// ── GENERATE ARTIKEL ──
+async function generateArtikel(kwOverride, langOverride){
+  const apiKey=document.getElementById('claudeKey').value.trim();
+  const kw=(kwOverride||document.getElementById('keyword').value.trim());
+  const kota=document.getElementById('kota').value.trim();
+  const lang=langOverride||document.getElementById('langPair').value;
+  const jenis=document.getElementById('jenisLayanan').value;
+
+  if(!apiKey){alert('Isi Claude API Key di bagian Konfigurasi!\nDapatkan di: console.anthropic.com');return null;}
+  if(!kw){alert('Isi keyword terlebih dahulu!');return null;}
+
+  const btn=document.getElementById('btnGen');
+  if(btn){btn.disabled=true;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Generating...';}
+  setGenStatus('🤖 Generating artikel...',true); setProgress(15);
+  document.getElementById('btnPost').style.display='none';
+  document.getElementById('btnAddQueue').style.display='none';
+  document.getElementById('btnCopy').style.display='none';
+  document.getElementById('previewBox').style.display='none';
+  document.getElementById('imgPreviewBox').style.display='none';
+  generatedHTML='';
+
+  // Generate image
+  const imgUrl=generateImage(kw);
+  setGenStatus('🎨 Generating gambar dari Pollinations AI...',true);
+  previewImage(imgUrl);
+
+  const kotaStr=kota?' di '+kota:'';
+  const kotaTitle=kota?' '+kota:'';
+  const prompt=`Kamu adalah penulis konten SEO profesional untuk website jasa penerjemah bernama TerjemahPedia.\n\nBuat artikel blog SEO lengkap dalam Bahasa Indonesia untuk keyword: "${kw}"${kotaStr}.\nLayanan utama: ${jenis}. Bahasa: ${lang}.\n\nTulis artikel dengan format HTML berikut PERSIS:\n\n<h1>[Judul SEO menarik, mengandung keyword "${kw}"${kotaTitle}, maksimal 70 karakter]</h1>\n\n<p>[Paragraf pembuka 2-3 kalimat, mengandung keyword]</p>\n\n<h2>🌐 [Heading section pertama relevan]</h2>\n<p>[2 paragraf informatif, gunakan <strong>bold</strong> untuk kata kunci penting]</p>\n\n<h2>📋 Jenis Layanan Lengkap</h2>\n<p>TerjemahPedia menyediakan berbagai layanan terjemahan profesional:</p>\n<ul>\n<li><strong>Proofreading dan Editing</strong> – memastikan hasil terjemahan akurat dan natural</li>\n<li><strong>Interpreter (Juru Bahasa Langsung)</strong> – untuk pertemuan, seminar, dan negosiasi bisnis</li>\n<li><strong>Penerjemah Website dan Bisnis Digital</strong> – lokalisasi konten untuk pasar global</li>\n<li><strong>Penerjemahan Tersumpah Resmi dan Legal</strong> – diakui instansi pemerintah dan lembaga hukum</li>\n</ul>\n\n<h2>⚡ [Heading keunggulan TerjemahPedia]</h2>\n<p>[2 paragraf tentang keunggulan layanan, <strong>bold</strong> kata-kata kunci penting]</p>\n\n<h2>📞 Hubungi TerjemahPedia Sekarang</h2>\n<p>Temukan layanan penerjemah terpercaya${kotaStr} hanya di TerjemahPedia:</p>\n<ul>\n<li>🌐 <a href="https://www.terjemahpedia.com">www.terjemahpedia.com</a></li>\n<li>📱 WhatsApp: <strong>0823-2396-3884</strong></li>\n</ul>\n<p>Dengan TerjemahPedia, urusan penerjemahan dokumen Anda jadi <strong>lebih mudah, cepat, dan dijamin sah secara hukum!</strong></p>\n\nPENTING: Balas HANYA dengan konten HTML di atas saja. Tidak ada teks pengantar, tidak ada penjelasan, tidak ada markdown fence.`;
+
+  try{
+    setProgress(40);
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})
+    });
+    setProgress(78);
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error?.message||'API Error '+res.status);
+    let html=data.content&&data.content[0]?data.content[0].text.trim():'';
+    html=html.replace(/```html|```/g,'').trim();
+    if(!html){setGenStatus('❌ Gagal generate. Coba lagi.',true);setProgress(0);return null;}
+    generatedHTML=html;
+    document.getElementById('rawHTML').value=html;
+    const titleMatch=html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+    const title=titleMatch?titleMatch[1].replace(/<[^>]+>/g,''):kw;
+    const preview=document.getElementById('previewBox');
+    preview.innerHTML=html; preview.style.display='block';
+    document.getElementById('btnPost').style.display='inline-flex';
+    document.getElementById('btnAddQueue').style.display='inline-flex';
+    document.getElementById('btnCopy').style.display='inline-flex';
+    setGenStatus('✅ Artikel + gambar siap: '+title.substring(0,50)+'...',true);
+    setProgress(100); setTimeout(()=>setProgress(0),1500);
+    if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px"><path d="M12 3l1.912 5.813a2 2 0 001.272 1.272L21 12l-5.816 1.916a2 2 0 00-1.272 1.272L12 21l-1.912-5.812a2 2 0 00-1.272-1.272L3 12l5.816-1.915a2 2 0 001.272-1.272L12 3z"/></svg> Generate Artikel + Gambar';}
+    return {html, imgUrl, title};
+  }catch(e){
+    setGenStatus('❌ Error: '+e.message,true); setProgress(0);
+    if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px"><path d="M12 3l1.912 5.813a2 2 0 001.272 1.272L21 12l-5.816 1.916a2 2 0 00-1.272 1.272L12 21l-1.912-5.812a2 2 0 00-1.272-1.272L3 12l5.816-1.915a2 2 0 001.272-1.272L12 3z"/></svg> Generate Artikel + Gambar';}
+    return null;
+  }
+}
+
+function copyHTML(){
+  if(!generatedHTML)return;
+  navigator.clipboard.writeText(generatedHTML).then(()=>{
+    setGenStatus('✅ HTML tersalin!',true); setTimeout(()=>setGenStatus('',false),2000);
+  });
+}
+
+// ── UPLOAD IMAGE TO WP ──
+async function uploadImageToWP(imgUrl, title){
+  const wpUrl=document.getElementById('wpUrl').value.trim().replace(/\/$/,'');
+  try{
+    if(!jwtToken) await getJWT();
+    const imgRes=await fetch(imgUrl);
+    const blob=await imgRes.blob();
+    const slug=title.replace(/\s+/g,'-').replace(/[^a-z0-9-]/gi,'').toLowerCase().substring(0,40);
+    const formData=new FormData();
+    formData.append('file', blob, slug+'.jpg');
+    let uploadRes=await fetch(wpUrl+'/?rest_route=/wp/v2/media',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+jwtToken,'Content-Disposition':'attachment; filename="'+slug+'.jpg"'},
+      body:formData
+    });
+    if(!uploadRes.ok) uploadRes=await fetch(wpUrl+'/wp-json/wp/v2/media',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+jwtToken,'Content-Disposition':'attachment; filename="'+slug+'.jpg"'},
+      body:formData
+    });
+    if(uploadRes.ok){
+      const media=await uploadRes.json();
+      return media.id;
+    }
+  }catch(e){console.log('Image upload failed:',e);}
+  return null;
+}
+
+// ── POST TO WP ──
+async function postToWP(kwOverride, langOverride, schedDate){
+  const url=document.getElementById('wpUrl').value.trim().replace(/\/$/,'');
+  const user=document.getElementById('wpUser').value.trim();
+  const pass=document.getElementById('wpPass').value.trim();
+  const catId=parseInt(document.getElementById('wpCat').value)||1;
+  const status=document.getElementById('postStatus').value;
+
+  if(!url||!user||!pass){alert('Isi data WordPress dan test koneksi dulu!');return false;}
+
+  let html=generatedHTML, imgUrl=document.getElementById('currentImgUrl').value;
+
+  if(kwOverride){
+    const result=await generateArtikel(kwOverride, langOverride);
+    if(!result) return false;
+    html=result.html; imgUrl=result.imgUrl;
+    await new Promise(r=>setTimeout(r,3000)); // wait for image
+  }
+
+  if(!html){alert('Generate artikel dulu!');return false;}
+
+  const btn=document.getElementById('btnPost');
+  if(btn&&!kwOverride){btn.disabled=true;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Posting...';}
+  setGenStatus('📤 Mengirim ke WordPress...',true);
+
+  const titleMatch=html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+  const title=titleMatch?titleMatch[1].replace(/<[^>]+>/g,''):'Artikel TerjemahPedia';
+  const content=html.replace(/<h1[^>]*>.*?<\/h1>/i,'').trim();
+
+  try{
+    if(!jwtToken) await getJWT();
+
+    // Upload gambar dulu
+    let featuredMediaId=null;
+    if(imgUrl){
+      setGenStatus('🖼️ Upload gambar ke WordPress...',true);
+      featuredMediaId=await uploadImageToWP(imgUrl, title);
+    }
+
+    const postData={title, content, status, categories:[catId]};
+    if(featuredMediaId) postData.featured_media=featuredMediaId;
+    if(schedDate) postData.date=schedDate;
+
+    let res=await fetch(url+'/?rest_route=/wp/v2/posts',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+jwtToken,'Content-Type':'application/json'},
+      body:JSON.stringify(postData)
+    });
+    if(!res.ok&&res.status===404) res=await fetch(url+'/wp-json/wp/v2/posts',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+jwtToken,'Content-Type':'application/json'},
+      body:JSON.stringify(postData)
+    });
+    if(res.ok){
+      const d=await res.json();
+      const label='🎉 '+(schedDate?'Dijadwalkan':'Terpublish')+' ID:'+d.id+(featuredMediaId?' + 🖼️':'');
+      setGenStatus(label,true);
+      addLog(title, status, d.link||'', true, featuredMediaId!=null);
+      if(btn&&!kwOverride) btn.style.display='none';
+      return true;
+    }else{
+      const err=await res.json().catch(()=>({}));
+      setGenStatus('❌ Gagal: '+(err.message||'Error '+res.status),true);
+      addLog(title,status,'',false,false);
+      return false;
+    }
+  }catch(e){
+    setGenStatus('❌ Error: '+e.message,true);
+    addLog(title,status,'',false,false);
+    return false;
+  }finally{
+    if(btn&&!kwOverride){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg> Post ke WordPress';}
+  }
+}
+
+// ── QUEUE ──
+function addToQueue(){
+  const kw=document.getElementById('keyword').value.trim();
+  const lang=document.getElementById('langPair').value;
+  if(!kw){alert('Isi keyword dulu!');return;}
+  const now=new Date();
+  now.setMinutes(now.getMinutes()+Math.floor(Math.random()*60)+5);
+  queue.push({id:Date.now(),kw,lang,schedTime:now.toISOString(),status:'waiting',link:''});
+  saveQueue(); renderQueue(); updateStats();
+  setGenStatus('✅ Ditambahkan ke jadwal: '+kw,true);
+}
+
+function randomTime(dateStr, startH, endH){
+  const d=new Date(dateStr);
+  const h=startH+Math.floor(Math.random()*(endH-startH));
+  const m=Math.floor(Math.random()*60);
+  const s=Math.floor(Math.random()*60);
+  d.setHours(h,m,s,0);
+  return d;
+}
+
+function bulkSchedule(){
+  const raw=document.getElementById('bulkKeywords').value.trim();
+  if(!raw){alert('Isi daftar keyword dulu!');return;}
+  const keywords=raw.split('\n').map(k=>k.trim()).filter(k=>k);
+  const startH=parseInt(document.getElementById('schedStart').value)||8;
+  const endH=parseInt(document.getElementById('schedEnd').value)||20;
+  const perDay=parseInt(document.getElementById('schedPerDay').value)||3;
+  const startDate=document.getElementById('schedDate').value||new Date().toISOString().split('T')[0];
+  const lang=document.getElementById('schedLang').value;
+
+  let day=0, countToday=0;
+  keywords.forEach(kw=>{
+    if(countToday>=perDay){day++;countToday=0;}
+    const d=new Date(startDate);
+    d.setDate(d.getDate()+day);
+    const dateStr=d.toISOString().split('T')[0];
+    const schedTime=randomTime(dateStr,startH,endH);
+    queue.push({id:Date.now()+Math.random(),kw,lang,schedTime:schedTime.toISOString(),status:'waiting',link:''});
+    countToday++;
+  });
+
+  queue.sort((a,b)=>new Date(a.schedTime)-new Date(b.schedTime));
+  saveQueue(); renderQueue(); updateStats();
+  alert('✅ '+keywords.length+' artikel dijadwalkan!\nCek tab Jadwal Posting untuk detailnya.');
+}
+
+function clearQueue(){
+  if(!confirm('Hapus semua jadwal?')) return;
+  queue=queue.filter(q=>q.status==='done');
+  saveQueue(); renderQueue(); updateStats();
+}
+
+function removeFromQueue(id){
+  queue=queue.filter(q=>q.id!==id);
+  saveQueue(); renderQueue(); updateStats();
+}
+
+function renderQueue(){
+  const tbody=document.getElementById('queueBody');
+  if(!queue.length){
+    tbody.innerHTML='<tr><td colspan="5" class="empty">Belum ada jadwal. Tambah dari tab Generate atau buat massal.</td></tr>';
+    return;
+  }
+  const sorted=[...queue].sort((a,b)=>new Date(a.schedTime)-new Date(b.schedTime));
+  tbody.innerHTML=sorted.map((q,i)=>{
+    const dt=new Date(q.schedTime);
+    const dateStr=dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+    const timeStr=dt.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    const now=new Date();
+    const diff=dt-now;
+    let countdown='';
+    if(q.status==='waiting'&&diff>0){
+      const h=Math.floor(diff/3600000), m=Math.floor((diff%3600000)/60000);
+      countdown=`<br><span class="countdown">⏰ ${h>0?h+'j ':''} ${m}m lagi</span>`;
+    }
+    const statusMap={
+      waiting:`<span class="sched-status sched-waiting">⏳ Menunggu</span>`,
+      running:`<span class="sched-status sched-running" style="animation:pulse 1s infinite">🔄 Proses...</span>`,
+      done:`<span class="sched-status sched-done">✅ Selesai</span>`,
+      failed:`<span class="sched-status sched-failed">❌ Gagal</span>`
+    };
+    return `<tr>
+      <td style="color:var(--ink3);font-size:12px">${i+1}</td>
+      <td><strong style="font-size:13px">${q.kw}</strong><br><span style="font-size:11px;color:var(--ink3)">${q.lang||''}</span></td>
+      <td style="font-size:12px">${dateStr}<br><strong>${timeStr}</strong>${countdown}</td>
+      <td>${statusMap[q.status]||''} ${q.link?`<br><a href="${q.link}" target="_blank" style="font-size:11px;color:var(--c5)">Lihat →</a>`:''}</td>
+      <td>${q.status==='waiting'?`<button class="btn btn-sm btn-red" onclick="removeFromQueue(${q.id})">✕</button>`:'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStats(){
+  document.getElementById('statTotal').textContent=queue.length;
+  document.getElementById('statWaiting').textContent=queue.filter(q=>q.status==='waiting').length;
+  document.getElementById('statDone').textContent=queue.filter(q=>q.status==='done').length;
+  document.getElementById('statFailed').textContent=queue.filter(q=>q.status==='failed').length;
+}
+
+// ── RUN QUEUE ──
+async function runQueue(){
+  if(isRunning){alert('Antrian sedang berjalan!');return;}
+  const waiting=queue.filter(q=>q.status==='waiting');
+  if(!waiting.length){alert('Tidak ada artikel yang menunggu dijadwalkan!');return;}
+
+  const wpUrl=document.getElementById('wpUrl').value.trim();
+  const wpUser=document.getElementById('wpUser').value.trim();
+  const wpPass=document.getElementById('wpPass').value.trim();
+  const apiKey=document.getElementById('claudeKey').value.trim();
+  if(!wpUrl||!wpUser||!wpPass||!apiKey){
+    alert('Isi semua konfigurasi API dan WordPress terlebih dahulu!');return;
+  }
+
+  isRunning=true;
+  const btn=document.getElementById('btnRunQueue');
+  btn.disabled=true; btn.innerHTML='⏳ Sedang berjalan...';
+
+  for(let item of waiting){
+    const now=new Date();
+    const schedTime=new Date(item.schedTime);
+    const diff=schedTime-now;
+
+    if(diff>0){
+      // Update status to show next posting time
+      item.status='waiting';
+      renderQueue(); updateStats();
+      // Wait until scheduled time
+      await new Promise(r=>setTimeout(r,diff));
+    }
+
+    item.status='running';
+    renderQueue(); updateStats();
+
+    try{
+      const apiKey=document.getElementById('claudeKey').value.trim();
+      const url=document.getElementById('wpUrl').value.trim().replace(/\/$/,'');
+      const user=document.getElementById('wpUser').value.trim();
+      const pass=document.getElementById('wpPass').value.trim();
+      const catId=parseInt(document.getElementById('wpCat').value)||1;
+
+      // Generate article
+      const prompt=`Kamu adalah penulis konten SEO profesional untuk website jasa penerjemah bernama TerjemahPedia.\n\nBuat artikel blog SEO dalam Bahasa Indonesia untuk keyword: "${item.kw}".\nBahasa: ${item.lang||'Indonesia – Inggris'}.\n\nFormat HTML:\n<h1>[Judul SEO mengandung keyword]</h1>\n<p>[Pembuka 2-3 kalimat]</p>\n<h2>🌐 [Heading 1]</h2>\n<p>[2 paragraf dengan <strong>bold</strong>]</p>\n<h2>📋 Jenis Layanan Lengkap</h2>\n<p>TerjemahPedia menyediakan berbagai layanan:</p>\n<ul><li><strong>Proofreading dan Editing</strong></li><li><strong>Interpreter (Juru Bahasa Langsung)</strong></li><li><strong>Penerjemah Website dan Bisnis Digital</strong></li><li><strong>Penerjemahan Tersumpah Resmi dan Legal</strong></li></ul>\n<h2>⚡ [Heading keunggulan]</h2>\n<p>[2 paragraf keunggulan]</p>\n<h2>📞 Hubungi TerjemahPedia Sekarang</h2>\n<p>Temukan layanan terjemahan terpercaya di TerjemahPedia:</p>\n<ul><li>🌐 <a href="https://www.terjemahpedia.com">www.terjemahpedia.com</a></li><li>📱 WhatsApp: <strong>0823-2396-3884</strong></li></ul>\n<p>Dengan TerjemahPedia, dokumen Anda jadi <strong>lebih mudah, cepat, dan dijamin sah!</strong></p>\n\nBALAS HANYA HTML, tanpa pengantar.`;
+
+      const aiRes=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})
+      });
+      const aiData=await aiRes.json();
+      if(!aiRes.ok) throw new Error(aiData.error?.message||'AI Error');
+      let html=aiData.content[0].text.trim().replace(/```html|```/g,'').trim();
+
+      const imgUrl=generateImage(item.kw);
+      await new Promise(r=>setTimeout(r,3000));
+
+      const titleMatch=html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      const title=titleMatch?titleMatch[1].replace(/<[^>]+>/g,''):item.kw;
+      const content=html.replace(/<h1[^>]*>.*?<\/h1>/i,'').trim();
+
+      // Upload image
+      let featuredMediaId=null;
+      try{
+        const imgRes=await fetch(imgUrl);
+        const blob=await imgRes.blob();
+        const slug=title.replace(/\s+/g,'-').replace(/[^a-z0-9-]/gi,'').toLowerCase().substring(0,40);
+        const formData=new FormData();
+        formData.append('file',blob,slug+'.jpg');
+        let uploadRes=await fetch(url+'/?rest_route=/wp/v2/media',{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+jwtToken,'Content-Disposition':'attachment; filename="'+slug+'.jpg"'},
+          body:formData
+        });
+        if(!uploadRes.ok) uploadRes=await fetch(url+'/wp-json/wp/v2/media',{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+jwtToken,'Content-Disposition':'attachment; filename="'+slug+'.jpg"'},
+          body:formData
+        });
+        if(uploadRes.ok){const m=await uploadRes.json();featuredMediaId=m.id;}
+      }catch(e){}
+
+      const postData={title,content,status:'publish',categories:[catId]};
+      if(featuredMediaId) postData.featured_media=featuredMediaId;
+
+      if(!jwtToken) await getJWT();
+      let wpRes=await fetch(url+'/?rest_route=/wp/v2/posts',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+jwtToken,'Content-Type':'application/json'},
+        body:JSON.stringify(postData)
+      });
+      if(!wpRes.ok&&wpRes.status===404) wpRes=await fetch(url+'/wp-json/wp/v2/posts',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+jwtToken,'Content-Type':'application/json'},
+        body:JSON.stringify(postData)
+      });
+
+      if(wpRes.ok){
+        const d=await wpRes.json();
+        item.status='done'; item.link=d.link||'';
+        addLog(title,'publish',d.link||'',true,featuredMediaId!=null);
+      }else{
+        throw new Error('WP post failed');
+      }
+    }catch(e){
+      item.status='failed';
+      addLog(item.kw,'publish','',false,false);
+    }
+
+    saveQueue(); renderQueue(); updateStats();
+    await new Promise(r=>setTimeout(r,5000)); // 5s jeda antar artikel
+  }
+
+  isRunning=false;
+  btn.disabled=false; btn.innerHTML='▶ Jalankan Sekarang';
+  alert('✅ Semua antrian selesai diproses!');
+}
+
+// ── LOG ──
+function addLog(title,status,link,ok,hasImg){
+  const now=new Date();
+  const time=now.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  logItems.unshift({title,status,link,ok,hasImg,time});
+  saveLog(); renderLog();
+}
+function renderLog(){
+  const el=document.getElementById('postLog');
+  if(!logItems.length){el.innerHTML='<div class="empty">📭 Belum ada riwayat posting</div>';return;}
+  el.innerHTML=logItems.map(l=>`
+    <div class="log-item">
+      <div class="log-dot ${l.ok?'dot-g':'dot-r'}"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px">${l.title}</div>
+        <div style="color:var(--ink3);margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px">
+          <span>${l.time}</span>
+          <span class="badge ${l.ok?'badge-g':'badge-r'}">${l.ok?'✅ Published':'❌ Gagal'}</span>
+          ${l.hasImg?'<span class="badge badge-b">🖼️ Ada Gambar</span>':''}
+          ${l.link?`<a href="${l.link}" target="_blank" style="color:var(--c5);font-weight:700">Lihat →</a>`:''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function clearLog(){logItems=[];saveLog();renderLog();}
+
+// Update countdown every minute
+setInterval(()=>{if(document.getElementById('tab-schedule').classList.contains('active')) renderQueue();},60000);
+</script>
+</body>
+</html>
