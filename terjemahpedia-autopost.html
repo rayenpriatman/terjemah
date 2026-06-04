@@ -289,7 +289,7 @@ textarea{resize:vertical;line-height:1.7}
           Generating gambar...
         </div>
         <img id="imgPreview" src="" alt="" style="display:none">
-        <div class="img-label">🖼️ Foto Dokumen</div>
+        <div class="img-label">🖼️ Wikimedia Commons</div>
       </div>
       <div class="preview" id="previewBox"></div>
       <textarea id="rawHTML" style="display:none"></textarea>
@@ -510,122 +510,67 @@ async function testWP(){
   }
 }
 
-// ── GENERATE IMAGE (Canvas offline — tema dokumen) ──
-const DOC_THEMES=[
-  {bg:'#0f2d4a',accent:'#3b82f6',icon:'📄',label:'Dokumen Resmi'},
-  {bg:'#1e1b4b',accent:'#8b5cf6',icon:'📋',label:'Kontrak & Perjanjian'},
-  {bg:'#14532d',accent:'#22c55e',icon:'📜',label:'Sertifikat Resmi'},
-  {bg:'#7f1d1d',accent:'#f87171',icon:'🗂️',label:'Arsip Dokumen'},
-  {bg:'#1c1917',accent:'#f59e0b',icon:'✍️',label:'Legalisir Dokumen'},
-  {bg:'#0c4a6e',accent:'#38bdf8',icon:'🌐',label:'Terjemah Resmi'},
-  {bg:'#1a2e05',accent:'#84cc16',icon:'📑',label:'Berkas Hukum'},
-  {bg:'#3b0764',accent:'#d946ef',icon:'🔏',label:'Dokumen Tersumpah'},
-  {bg:'#0f172a',accent:'#94a3b8',icon:'📌',label:'Apostille'},
-  {bg:'#1e3a5f',accent:'#60a5fa',icon:'🖊️',label:'Sworn Translator'},
-  {bg:'#292524',accent:'#d97706',icon:'📂',label:'Berkas Imigrasi'},
-  {bg:'#064e3b',accent:'#10b981',icon:'🔖',label:'Akta Notaris'},
-  {bg:'#1e1b4b',accent:'#a78bfa',icon:'📃',label:'Surat Keterangan'},
-  {bg:'#4c0519',accent:'#fb7185',icon:'🗃️',label:'Akta Kelahiran'},
-  {bg:'#172554',accent:'#2563eb',icon:'🛂',label:'Dokumen Imigrasi'},
-  {bg:'#1c1917',accent:'#f97316',icon:'🖋️',label:'Penerjemah Bersumpah'},
-  {bg:'#052e16',accent:'#16a34a',icon:'📝',label:'Terjemah Ijazah'},
-  {bg:'#1e3a5f',accent:'#0ea5e9',icon:'🏛️',label:'Dokumen Pengadilan'},
-  {bg:'#3f0f0f',accent:'#dc2626',icon:'🔴',label:'Dokumen Urgen'},
-  {bg:'#0a0a23',accent:'#6366f1',icon:'⚖️',label:'Dokumen Legal'},
+// ── GENERATE IMAGE (Wikimedia Commons — foto dokumen asli) ──
+// Daftar file foto dokumen nyata dari Wikimedia Commons
+const WIKI_IMAGES=[
+  'Fountain_pen_writing_(literacy).jpg',
+  'Stack_of_typeset_pages.jpg',
+  'Documents_stacked_up.jpg',
+  'Old_book_bindings.jpg',
+  'Latin_dictionary.jpg',
+  'Bookbinding_Wikimedia_Commons.jpg',
+  'Manila_folders.jpg',
+  'Pen_and_notebook.jpg',
+  'Legal_pad.jpg',
+  'Writing_on_paper.jpg',
+  'Business_card.jpg',
+  'Blank_page.jpg',
+  'Papers_and_pen.jpg',
+  'Typewriter_keys.jpg',
+  'Stack_of_books.jpg',
+  'Reading_a_book.jpg',
+  'Notebook_and_pen.jpg',
+  'Contract_signing.jpg',
+  'Certificate_template.jpg',
+  'Office_desk.jpg',
 ];
 
-function shadeColor(hex, amt){
-  const num=parseInt(hex.replace('#',''),16);
-  const r=Math.min(255,Math.max(0,(num>>16)+amt));
-  const g=Math.min(255,Math.max(0,((num>>8)&0xff)+amt));
-  const b=Math.min(255,Math.max(0,(num&0xff)+amt));
-  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+// Pakai Wikimedia API untuk cari gambar dokumen berdasarkan keyword
+async function fetchWikiImage(keyword){
+  const queries=[
+    keyword+' document',
+    'document paper office',
+    'translation document',
+    'official document certificate',
+    'paper writing pen',
+  ];
+  for(const q of queries){
+    try{
+      const url=`https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrnamespace=6&prop=imageinfo&iiprop=url|dimensions&iiurlwidth=1200&format=json&origin=*&gsrlimit=5`;
+      const res=await fetch(url);
+      const data=await res.json();
+      if(data.query&&data.query.pages){
+        const pages=Object.values(data.query.pages);
+        for(const p of pages){
+          if(p.imageinfo&&p.imageinfo[0]){
+            const info=p.imageinfo[0];
+            const thumbUrl=info.thumburl||info.url;
+            // Filter hanya jpg/png, skip svg
+            if(thumbUrl&&(thumbUrl.includes('.jpg')||thumbUrl.includes('.jpeg')||thumbUrl.includes('.png'))){
+              return thumbUrl;
+            }
+          }
+        }
+      }
+    }catch(e){}
+  }
+  return null;
 }
 
 function generateImage(keyword){
-  const theme=DOC_THEMES[Math.floor(Math.random()*DOC_THEMES.length)];
-  const canvas=document.createElement('canvas');
-  canvas.width=1200; canvas.height=630;
-  const ctx=canvas.getContext('2d');
-
-  // Background gradient
-  const grad=ctx.createLinearGradient(0,0,1200,630);
-  grad.addColorStop(0, theme.bg);
-  grad.addColorStop(1, shadeColor(theme.bg, 30));
-  ctx.fillStyle=grad; ctx.fillRect(0,0,1200,630);
-
-  // Grid pattern
-  ctx.strokeStyle='rgba(255,255,255,0.04)';
-  ctx.lineWidth=1;
-  for(let x=0;x<1200;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,630);ctx.stroke();}
-  for(let y=0;y<630;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(1200,y);ctx.stroke();}
-
-  // Accent left bar
-  ctx.fillStyle=theme.accent;
-  ctx.fillRect(0,0,10,630);
-
-  // Accent circle besar (dekorasi)
-  ctx.beginPath();
-  ctx.arc(1050,315,260,0,Math.PI*2);
-  ctx.fillStyle='rgba(255,255,255,0.03)';
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.arc(1050,315,200,0,Math.PI*2);
-  ctx.fillStyle='rgba(255,255,255,0.04)';
-  ctx.fill();
-
-  // Big icon
-  ctx.font='140px serif';
-  ctx.textAlign='center';
-  ctx.fillText(theme.icon, 1050, 355);
-
-  // Label tema (badge)
-  const badgeW=ctx.measureText(theme.label).width+40;
-  ctx.font='bold 22px sans-serif';
-  const bw=ctx.measureText(theme.label).width+32;
-  ctx.fillStyle=theme.accent+'33';
-  ctx.beginPath();
-  ctx.roundRect(60, 80, bw, 40, 20);
-  ctx.fill();
-  ctx.fillStyle=theme.accent;
-  ctx.textAlign='left';
-  ctx.fillText(theme.label, 76, 106);
-
-  // Keyword utama
-  ctx.fillStyle='rgba(255,255,255,0.95)';
-  ctx.font='bold 54px sans-serif';
-  // Word wrap jika panjang
-  const words=keyword.split(' ');
-  let line='', lines=[], maxW=700;
-  for(const w of words){
-    const test=line+(line?' ':'')+w;
-    if(ctx.measureText(test).width>maxW && line){lines.push(line);line=w;}
-    else line=test;
-  }
-  lines.push(line);
-  lines=lines.slice(0,2);
-  const startY=lines.length===1?290:260;
-  lines.forEach((l,i)=>ctx.fillText(l, 60, startY+i*65));
-
-  // Divider line
-  ctx.fillStyle=theme.accent;
-  ctx.fillRect(60, startY+(lines.length*65)+10, 120, 4);
-
-  // Brand / tagline
-  ctx.fillStyle='rgba(255,255,255,0.55)';
-  ctx.font='20px sans-serif';
-  ctx.fillText('TerjemahPedia.com  •  Penerjemah Profesional & Tersumpah', 60, startY+(lines.length*65)+50);
-
-  // Bottom accent bar
-  const grad2=ctx.createLinearGradient(0,0,1200,0);
-  grad2.addColorStop(0, theme.accent);
-  grad2.addColorStop(0.5, theme.accent+'88');
-  grad2.addColorStop(1, 'transparent');
-  ctx.fillStyle=grad2;
-  ctx.fillRect(0,600,1200,30);
-
-  return canvas.toDataURL('image/jpeg', 0.92);
+  // Ini dipanggil sync untuk kompatibilitas — return placeholder dulu
+  // previewImage async akan handle fetch Wikimedia
+  return '__wikimedia__'+keyword;
 }
 
 function previewImage(url){
@@ -633,10 +578,29 @@ function previewImage(url){
   const img=document.getElementById('imgPreview');
   const loading=document.getElementById('imgLoading');
   box.style.display='block';
-  loading.style.display='none';
-  img.style.display='block';
-  img.src=url;
-  document.getElementById('currentImgUrl').value=url;
+
+  if(url.startsWith('__wikimedia__')){
+    const keyword=url.replace('__wikimedia__','');
+    loading.style.display='flex';
+    loading.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Mencari foto dokumen...';
+    img.style.display='none';
+    fetchWikiImage(keyword).then(imgUrl=>{
+      if(imgUrl){
+        img.onload=()=>{loading.style.display='none';img.style.display='block';};
+        img.onerror=()=>{loading.innerHTML='⚠️ Gambar gagal — artikel tetap bisa diposting';document.getElementById('currentImgUrl').value='';};
+        img.src=imgUrl;
+        document.getElementById('currentImgUrl').value=imgUrl;
+      }else{
+        loading.innerHTML='⚠️ Foto tidak ditemukan — artikel tetap bisa diposting tanpa gambar';
+        document.getElementById('currentImgUrl').value='';
+      }
+    });
+  }else{
+    loading.style.display='none';
+    img.style.display='block';
+    img.src=url;
+    document.getElementById('currentImgUrl').value=url;
+  }
 }
 
 // ── GENERATE ARTIKEL ──
@@ -662,7 +626,7 @@ async function generateArtikel(kwOverride, langOverride){
 
   // Generate image
   const imgUrl=generateImage(kw);
-  setGenStatus('🖼️ Memuat foto dokumen...',true);
+  setGenStatus('🖼️ Mencari foto dokumen di Wikimedia...',true);
   previewImage(imgUrl);
 
   const kotaStr=kota?' di '+kota:'';
