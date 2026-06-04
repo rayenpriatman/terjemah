@@ -510,63 +510,69 @@ async function testWP(){
   }
 }
 
-// ── GENERATE IMAGE — Foto dokumen asli dari Wikimedia Commons ──
-const DOC_IMAGES=[
-  // Dokumen & Surat resmi
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Fountain_pen_writing_%28literacy%29.jpg/1280px-Fountain_pen_writing_%28literacy%29.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Notarization.jpg/1280px-Notarization.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Manila_folders.jpg/1280px-Manila_folders.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Stack_of_books_in_a_library.jpg/1280px-Stack_of_books_in_a_library.jpg',
-  // Paspor
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Passport_of_Indonesia.jpg/1280px-Passport_of_Indonesia.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Indonesian_passport_%282014%29.jpg/1280px-Indonesian_passport_%282014%29.jpg',
-  // Buku & Terjemah
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Open_book_nae_02.svg/1280px-Open_book_nae_02.svg.png',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Old_book_bindings.jpg/1280px-Old_book_bindings.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Simple_book_cover.jpg/1280px-Simple_book_cover.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Bibliotheek_van_Universiteit_Amsterdam.jpg/1280px-Bibliotheek_van_Universiteit_Amsterdam.jpg',
-  // Ijazah & Sertifikat
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Diploma_de_Bachiller.jpg/1280px-Diploma_de_Bachiller.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Certificate_icon.svg/1280px-Certificate_icon.svg.png',
-  // Kontrak & Penandatanganan
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Signing_contract.jpg/1280px-Signing_contract.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Pen_writing.jpg/1280px-Pen_writing.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Ballpoint-pen-writing.jpg/1280px-Ballpoint-pen-writing.jpg',
-  // Kamus & Terjemahan
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Oxford-English-Dictionary.jpg/1280px-Oxford-English-Dictionary.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Latin_dictionary.jpg/1280px-Latin_dictionary.jpg',
-  // Meja kantor
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Office_work.jpg/1280px-Office_work.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Desk_work.jpg/1280px-Desk_work.jpg',
-  // Akta
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Birth_certificate.jpg/1280px-Birth_certificate.jpg',
-  // Stempel / Cap
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Notary_stamp.jpg/1280px-Notary_stamp.jpg',
-  // Dokumen hukum
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Law_book.jpg/1280px-Law_book.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Books_of_the_Bible.jpg/1280px-Books_of_the_Bible.jpg',
-  // KTP / ID Card (kartu identitas umum)
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/National_Identity_Card_Malaysia.jpg/1280px-National_Identity_Card_Malaysia.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Indonesian_Identity_Card.jpg/1280px-Indonesian_Identity_Card.jpg',
-  // Tulisan tangan
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Cursive_handwriting.jpg/1280px-Cursive_handwriting.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Handwriting.jpg/1280px-Handwriting.jpg',
-  // Mesin ketik & percetakan
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/1280px-Camponotus_flavomarginatus_ant.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Typewriter.jpg/1280px-Typewriter.jpg',
-  // Amplop & surat
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Envelope.svg/1280px-Envelope.svg.png',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Letter_folded.jpg/1280px-Letter_folded.jpg',
+// ── GENERATE IMAGE — Multi-source dengan fallback ──
+// Foto dokumen dari berbagai CDN, dicoba satu per satu sampai berhasil
+const DOC_SOURCES = [
+  // Picsum (foto stok umum, banyak tema kantor/buku)
+  () => `https://picsum.photos/seed/${Math.random().toString(36).slice(2)}/1200/630`,
+  // Wikipedia langsung (bukan thumb)
+  () => 'https://upload.wikimedia.org/wikipedia/commons/3/3d/Manila_folders.jpg',
+  () => 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Old_book_bindings.jpg',
+  () => 'https://upload.wikimedia.org/wikipedia/commons/8/8e/Fountain_pen_writing_%28literacy%29.jpg',
+  // Pexels CDN (beberapa foto public)
+  () => 'https://images.pexels.com/photos/95916/pexels-photo-95916.jpeg',
+  () => 'https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg',
+  () => 'https://images.pexels.com/photos/590016/pexels-photo-590016.jpeg',
 ];
 
-// Shuffle array
+// Daftar foto dokumen Wikimedia — URL langsung (bukan thumb) lebih sering lolos CORS
+const DOC_IMAGES = [
+  // Pena & menulis
+  'https://upload.wikimedia.org/wikipedia/commons/8/8e/Fountain_pen_writing_%28literacy%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/3/33/Ballpoint-Pens.jpg',
+  // Buku & perpustakaan
+  'https://upload.wikimedia.org/wikipedia/commons/7/7b/Old_book_bindings.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/2/21/Simple_book_cover.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/f/f9/Phoenicopterus_ruber_in_S%C3%A3o_Paulo_Zoo.jpg',
+  // Map & folder
+  'https://upload.wikimedia.org/wikipedia/commons/3/3d/Manila_folders.jpg',
+  // Dokumen & kertas
+  'https://upload.wikimedia.org/wikipedia/commons/6/6c/Writing_on_paper.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/b/b1/Writing_in_red_pen.jpg',
+  // Kamus
+  'https://upload.wikimedia.org/wikipedia/commons/e/e5/Latin_dictionary.jpg',
+  // Kontrak
+  'https://upload.wikimedia.org/wikipedia/commons/9/96/Pen_writing.jpg',
+  // Pexels — foto kantor & dokumen
+  'https://images.pexels.com/photos/95916/pexels-photo-95916.jpeg?auto=compress&w=1200',
+  'https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&w=1200',
+  'https://images.pexels.com/photos/590016/pexels-photo-590016.jpeg?auto=compress&w=1200',
+  'https://images.pexels.com/photos/1261180/pexels-photo-1261180.jpeg?auto=compress&w=1200',
+  'https://images.pexels.com/photos/209224/pexels-photo-209224.jpeg?auto=compress&w=1200',
+  'https://images.pexels.com/photos/267669/pexels-photo-267669.jpeg?auto=compress&w=1200',
+  'https://images.pexels.com/photos/1080865/pexels-photo-1080865.jpeg?auto=compress&w=1200',
+  'https://images.pexels.com/photos/48148/document-agreement-documents-sign-48148.jpeg?auto=compress&w=1200',
+  'https://images.pexels.com/photos/936137/pexels-photo-936137.jpeg?auto=compress&w=1200',
+  'https://images.pexels.com/photos/1925536/pexels-photo-1925536.jpeg?auto=compress&w=1200',
+  // Unsplash CDN
+  'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1200',
+  'https://images.unsplash.com/photo-1568667256549-094345857637?w=1200',
+  'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1200',
+  'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1200',
+  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1200',
+  'https://images.unsplash.com/photo-1583521214690-73421a1829a9?w=1200',
+  'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=1200',
+  'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1200',
+  'https://images.unsplash.com/photo-1532153975070-2e9ab71f1b14?w=1200',
+  'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200',
+];
+
 function shuffleArr(arr){return arr.map(v=>({v,r:Math.random()})).sort((a,b)=>a.r-b.r).map(x=>x.v);}
-const SHUFFLED_DOCS=shuffleArr(DOC_IMAGES);
-let docImgIndex=0;
+const SHUFFLED_DOCS = shuffleArr(DOC_IMAGES);
+let docImgIndex = 0;
 
 function generateImage(keyword){
-  // Ambil secara berurutan dari list yang sudah di-shuffle
-  const url=SHUFFLED_DOCS[docImgIndex % SHUFFLED_DOCS.length];
+  const url = SHUFFLED_DOCS[docImgIndex % SHUFFLED_DOCS.length];
   docImgIndex++;
   return url;
 }
@@ -580,17 +586,37 @@ function previewImage(url){
   loading.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Memuat foto dokumen...';
   img.style.display='none';
 
-  img.onload=()=>{loading.style.display='none';img.style.display='block';};
-  img.onerror=()=>{
-    // Coba gambar berikutnya di list
-    const nextUrl=SHUFFLED_DOCS[docImgIndex % SHUFFLED_DOCS.length];
-    docImgIndex++;
-    img.onerror=()=>{loading.innerHTML='⚠️ Foto gagal — artikel tetap bisa diposting tanpa gambar';document.getElementById('currentImgUrl').value='';};
-    img.src=nextUrl;
-    document.getElementById('currentImgUrl').value=nextUrl;
+  let tried = 0;
+  function tryNext(){
+    if(tried >= SHUFFLED_DOCS.length){ 
+      loading.innerHTML='⚠️ Foto gagal — artikel tetap bisa diposting tanpa gambar';
+      document.getElementById('currentImgUrl').value='';
+      return;
+    }
+    const nextUrl = SHUFFLED_DOCS[(docImgIndex + tried) % SHUFFLED_DOCS.length];
+    tried++;
+    const testImg = new Image();
+    testImg.crossOrigin = 'anonymous';
+    testImg.onload = () => {
+      loading.style.display='none';
+      img.style.display='block';
+      img.src = testImg.src;
+      document.getElementById('currentImgUrl').value = testImg.src;
+    };
+    testImg.onerror = () => tryNext();
+    testImg.src = nextUrl;
+  }
+
+  const mainImg = new Image();
+  mainImg.crossOrigin = 'anonymous';
+  mainImg.onload = () => {
+    loading.style.display='none';
+    img.style.display='block';
+    img.src = url;
+    document.getElementById('currentImgUrl').value = url;
   };
-  img.src=url;
-  document.getElementById('currentImgUrl').value=url;
+  mainImg.onerror = () => tryNext();
+  mainImg.src = url;
 }
 
 // ── GENERATE ARTIKEL ──
