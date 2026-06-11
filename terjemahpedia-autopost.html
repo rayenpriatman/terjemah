@@ -326,8 +326,16 @@ textarea{resize:vertical;line-height:1.7}
                   <input type="number" id="schedEnd" value="20" min="0" max="23" placeholder="20">
                 </div>
               </div>
-              <label>📅 Mulai Dari Tanggal</label>
-              <input type="date" id="schedDate">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div>
+                  <label style="margin-top:0">📅 Mulai Tanggal</label>
+                  <input type="date" id="schedDate">
+                </div>
+                <div>
+                  <label style="margin-top:0">📅 Sampai Tanggal</label>
+                  <input type="date" id="schedDateEnd">
+                </div>
+              </div>
               <label>📊 Artikel per Hari (Max)</label>
               <input type="number" id="schedPerDay" value="3" min="1" max="10">
               <label>🌐 Bahasa Default</label>
@@ -353,9 +361,15 @@ textarea{resize:vertical;line-height:1.7}
       <!-- QUEUE TABLE -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">Antrian Jadwal</span>
-        <button class="btn btn-green btn-sm" id="btnRunQueue" onclick="runQueue()">
-          ▶ Jalankan Sekarang
-        </button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-green btn-sm" id="btnRunQueue" onclick="runQueue()">
+            ▶ Jalankan Sekarang
+          </button>
+          <button class="btn btn-sm" id="btnAutoRun" onclick="toggleAutoRun()" style="background:#7c3aed;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer">
+            🤖 Auto-Run: OFF
+          </button>
+          <span id="autoRunStatus" style="font-size:12px;color:#888"></span>
+        </div>
       </div>
       <div style="overflow-x:auto">
         <table class="schedule-table">
@@ -387,7 +401,7 @@ textarea{resize:vertical;line-height:1.7}
 </div>
 
 <script>
-let generatedHTML='', logItems=[], queue=[], queueTimer=null, isRunning=false;
+let generatedHTML='', logItems=[], queue=[], queueTimer=null, isRunning=false, autoRunInterval=null, autoRunActive=false;
 
 // ── CONFIG ──
 function loadConfig(){
@@ -752,22 +766,35 @@ function bulkSchedule(){
   const endH=parseInt(document.getElementById('schedEnd').value)||20;
   const perDay=parseInt(document.getElementById('schedPerDay').value)||3;
   const startDate=document.getElementById('schedDate').value||new Date().toISOString().split('T')[0];
+  const endDate=document.getElementById('schedDateEnd').value;
   const lang=document.getElementById('schedLang').value;
 
+  // Hitung total hari dalam range
+  let totalDays=null;
+  if(endDate && endDate>=startDate){
+    const ms=new Date(endDate)-new Date(startDate);
+    totalDays=Math.floor(ms/(1000*60*60*24))+1;
+  }
+
   let day=0, countToday=0;
-  keywords.forEach(kw=>{
+  keywords.forEach((kw,idx)=>{
     if(countToday>=perDay){day++;countToday=0;}
+    // Kalau ada end date, keyword diulang jika lebih banyak dari slot
+    const actualDay=totalDays ? day % totalDays : day;
     const d=new Date(startDate);
-    d.setDate(d.getDate()+day);
-    const dateStr=d.toISOString().split('T')[0];
-    const schedTime=randomTime(dateStr,startH,endH);
+    d.setDate(d.getDate()+actualDay);
+    const schedTime=randomTime(d.toISOString().split('T')[0],startH,endH);
     queue.push({id:Date.now()+Math.random(),kw,lang,schedTime:schedTime.toISOString(),status:'waiting',link:''});
     countToday++;
   });
 
   queue.sort((a,b)=>new Date(a.schedTime)-new Date(b.schedTime));
   saveQueue(); renderQueue(); updateStats();
-  alert('✅ '+keywords.length+' artikel dijadwalkan!\nCek tab Jadwal Posting untuk detailnya.');
+
+  const startFmt=new Date(startDate).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+  const endFmt=endDate?new Date(endDate).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}):'';
+  const rangeInfo=endDate?`\nRange: ${startFmt} — ${endFmt} (${totalDays} hari)`:`\nMulai: ${startFmt}`;
+  alert('✅ '+keywords.length+' artikel dijadwalkan!'+rangeInfo+'\n\nCek tab Jadwal Posting untuk detailnya.');
 }
 
 function clearQueue(){
@@ -823,6 +850,154 @@ function updateStats(){
 }
 
 // ── RUN QUEUE ──
+// ── AUTO-RUN (jalan otomatis, tahan minimize/RDP) ──
+function toggleAutoRun(){
+  autoRunActive=!autoRunActive;
+  const btn=document.getElementById('btnAutoRun');
+  const status=document.getElementById('autoRunStatus');
+
+  if(autoRunActive){
+    btn.innerHTML='🟢 Auto-Run: ON';
+    btn.style.background='#16a34a';
+    status.textContent='Mengecek jadwal setiap menit...';
+    status.style.color='#22c55e';
+
+    // Cek langsung sekali
+    checkAndRunNext();
+
+    // Set interval setiap 60 detik
+    autoRunInterval=setInterval(()=>{
+      checkAndRunNext();
+    }, 60000);
+
+    // Pakai visibilitychange untuk wake up saat tab aktif lagi
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    // Simpan status ke localStorage supaya persistent
+    localStorage.setItem('autoRunActive','1');
+  } else {
+    btn.innerHTML='🤖 Auto-Run: OFF';
+    btn.style.background='#7c3aed';
+    status.textContent='';
+    if(autoRunInterval){ clearInterval(autoRunInterval); autoRunInterval=null; }
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    localStorage.removeItem('autoRunActive');
+  }
+}
+
+function onVisibilityChange(){
+  if(!document.hidden && autoRunActive){
+    checkAndRunNext();
+  }
+}
+
+async function checkAndRunNext(){
+  if(isRunning) return;
+  const now=new Date();
+  const status=document.getElementById('autoRunStatus');
+
+  // Cari artikel yang sudah waktunya
+  const due=queue.filter(q=>q.status==='waiting' && new Date(q.schedTime)<=now);
+  if(!due.length){
+    // Tampilkan jadwal berikutnya
+    const next=queue.filter(q=>q.status==='waiting').sort((a,b)=>new Date(a.schedTime)-new Date(b.schedTime))[0];
+    if(next && status){
+      const diff=new Date(next.schedTime)-now;
+      const h=Math.floor(diff/3600000);
+      const m=Math.floor((diff%3600000)/60000);
+      status.textContent=`⏰ Artikel berikutnya: ${h>0?h+'j ':''} ${m}m lagi`;
+    } else if(status) {
+      status.textContent='✅ Semua jadwal selesai';
+    }
+    return;
+  }
+
+  if(status) status.textContent=`🚀 Memproses ${due.length} artikel...`;
+
+  // Jalankan satu per satu
+  for(const item of due){
+    if(!autoRunActive) break;
+    await processQueueItem(item);
+    await new Promise(r=>setTimeout(r,5000));
+  }
+
+  if(status) status.textContent=`✅ Selesai. Mengecek lagi tiap menit...`;
+}
+
+// Restore auto-run saat halaman reload
+window.addEventListener('load', ()=>{
+  if(localStorage.getItem('autoRunActive')==='1'){
+    setTimeout(()=>toggleAutoRun(), 2000);
+  }
+});
+
+// Pisahkan logika proses 1 item supaya bisa dipanggil dari autoRun
+async function processQueueItem(item){
+  const wpUrl=document.getElementById('wpUrl').value.trim();
+  const wpUser=document.getElementById('wpUser').value.trim();
+  const wpPass=document.getElementById('wpPass').value.trim();
+  const apiKey=document.getElementById('claudeKey').value.trim();
+  if(!wpUrl||!wpUser||!wpPass||!apiKey) return;
+
+  item.status='running';
+  renderQueue(); updateStats();
+
+  try{
+    const url=wpUrl.replace(/\/$/,'');
+    const catId=parseInt(document.getElementById('wpCat').value)||1;
+
+    const prompt=`Kamu adalah penulis konten SEO profesional untuk website jasa penerjemah bernama TerjemahPedia.\n\nBuat artikel blog SEO dalam Bahasa Indonesia untuk keyword: "${item.kw}".\nBahasa: ${item.lang||'Indonesia – Inggris'}.\n\nFormat HTML:\n<h1>[Judul SEO mengandung keyword]</h1>\n<p>[Pembuka 2-3 kalimat]</p>\n<h2>🌐 [Heading 1]</h2>\n<p>[2 paragraf dengan <strong>bold</strong>]</p>\n<h2>📋 Jenis Layanan Lengkap</h2>\n<p>TerjemahPedia menyediakan berbagai layanan:</p>\n<ul><li><strong>Proofreading dan Editing</strong></li><li><strong>Interpreter (Juru Bahasa Langsung)</strong></li><li><strong>Penerjemah Website dan Bisnis Digital</strong></li><li><strong>Penerjemahan Tersumpah Resmi dan Legal</strong></li></ul>\n<h2>⚡ [Heading keunggulan]</h2>\n<p>[2 paragraf keunggulan]</p>\n<h2>📞 Hubungi TerjemahPedia Sekarang</h2>\n<p>Temukan layanan terjemahan terpercaya di TerjemahPedia:</p>\n<ul><li>🌐 <a href="https://www.terjemahpedia.com">www.terjemahpedia.com</a></li><li>📱 WhatsApp: <strong>0823-2396-3884</strong></li></ul>\n<p>Dengan TerjemahPedia, dokumen Anda jadi <strong>lebih mudah, cepat, dan dijamin sah!</strong></p>\n\nBALAS HANYA HTML, tanpa pengantar.`;
+
+    const aiRes=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})
+    });
+    const aiData=await aiRes.json();
+    if(!aiRes.ok) throw new Error(aiData.error?.message||'AI Error');
+    let html=aiData.content[0].text.trim().replace(/```html|```/g,'').trim();
+
+    const imgUrl=generateImage(item.kw);
+    await new Promise(r=>setTimeout(r,1000));
+
+    const titleMatch=html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+    const title=titleMatch?titleMatch[1].replace(/<[^>]+>/g,''):item.kw;
+    const postContent=html.replace(/<h1[^>]*>.*?<\/h1>/i,'').trim();
+
+    // Upload image
+    let featuredMediaId=null;
+    try{
+      const imgBlob=await (await fetch(imgUrl)).blob();
+      const slug=title.replace(/\s+/g,'-').replace(/[^a-z0-9-]/gi,'').toLowerCase().substring(0,40);
+      const formData=new FormData();
+      formData.append('file',imgBlob,slug+'.jpg');
+      if(!jwtToken) await getJWT();
+      let uploadRes=await fetch(url+'/?rest_route=/wp/v2/media',{method:'POST',headers:{'Authorization':'Bearer '+jwtToken,'Content-Disposition':'attachment; filename="'+slug+'.jpg"'},body:formData});
+      if(!uploadRes.ok) uploadRes=await fetch(url+'/wp-json/wp/v2/media',{method:'POST',headers:{'Authorization':'Bearer '+jwtToken,'Content-Disposition':'attachment; filename="'+slug+'.jpg"'},body:formData});
+      if(uploadRes.ok){const m=await uploadRes.json();featuredMediaId=m.id;}
+    }catch(e){}
+
+    const postData={title,content:postContent,status:'publish',categories:[catId]};
+    if(featuredMediaId) postData.featured_media=featuredMediaId;
+
+    if(!jwtToken) await getJWT();
+    let wpRes=await fetch(url+'/?rest_route=/wp/v2/posts',{method:'POST',headers:{'Authorization':'Bearer '+jwtToken,'Content-Type':'application/json'},body:JSON.stringify(postData)});
+    if(!wpRes.ok&&wpRes.status===404) wpRes=await fetch(url+'/wp-json/wp/v2/posts',{method:'POST',headers:{'Authorization':'Bearer '+jwtToken,'Content-Type':'application/json'},body:JSON.stringify(postData)});
+
+    if(wpRes.ok){
+      const d=await wpRes.json();
+      item.status='done'; item.link=d.link||'';
+      addLog(title,'publish',d.link||'',true,featuredMediaId!=null);
+    }else{
+      throw new Error('WP post failed');
+    }
+  }catch(e){
+    item.status='failed';
+    addLog(item.kw,'publish','',false,false);
+  }
+  saveQueue(); renderQueue(); updateStats();
+}
+
 async function runQueue(){
   if(isRunning){alert('Antrian sedang berjalan!');return;}
   const waiting=queue.filter(q=>q.status==='waiting');
